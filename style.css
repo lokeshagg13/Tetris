@@ -77,9 +77,13 @@ input[type="submit"]:hover {
   background-color: #45a049; /* Darker green on hover */
 }
 
+input[type="submit"]:disabled {
+  background-color: #aaaaaa; /* Darker green on hover */
+}
+
 input#reset {
   padding: 8px 16px;
-  background-color: #cccccc;
+  background-color: #3498db;
   color: black;
   border: none;
   border-radius: 4px;
@@ -91,11 +95,24 @@ input#reset {
 }
 
 input#reset:hover {
-  background-color: #aaaaaa;
+  background-color: #2980b9;
 }
 
 div.actions {
   display: flex;
   flex-direction: column;
+}
+
+button#loading {
+  position: absolute;
+  z-index: 1;
+  margin-top: 30px;
+  background-color: black;
+  color: white;
+  border: none;
+  width: 120px;
+  height: 50px;
+  font-size: 30px;
+  display: none;
 }
 /* Add more styles as needed */
