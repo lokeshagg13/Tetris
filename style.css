@@ -6,7 +6,7 @@ body {
 
 canvas {
   display: block;
-  margin: 20px 110px 20px 250px;
+  margin: 20px 110px 20px 150px;
   border: 2px solid white;
 }
 
@@ -22,10 +22,19 @@ form#main {
   margin-top: 20px;
 }
 
-div.input-num {
+div.controls {
   color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+div.input-num {
   margin-right: 10px;
-  margin-left: -225px;
+}
+
+div.input-speed {
+  margin-left: 38px;
 }
 
 .radio-group {
@@ -39,8 +48,11 @@ div.input-num {
   margin-bottom: 20px;
 }
 
-input[type="number"] {
-  padding: 5px;
+select {
+  width: 100px;
+  height: 30px;
+  font-size: larger;
+  text-align: center;
 }
 
 input[type="radio"] {
@@ -55,11 +67,52 @@ input[type="submit"] {
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  margin-left: 50px;
+  margin-top: 30px;
+  width: 120px;
+  height: 50px;
+  font-size: large;
 }
 
 input[type="submit"]:hover {
   background-color: #45a049; /* Darker green on hover */
 }
 
+input[type="submit"]:disabled {
+  background-color: #aaaaaa; /* Darker green on hover */
+}
+
+input#reset {
+  padding: 8px 16px;
+  background-color: #3498db;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 30px;
+  width: 120px;
+  height: 50px;
+  font-size: large;
+}
+
+input#reset:hover {
+  background-color: #2980b9;
+}
+
+div.actions {
+  display: flex;
+  flex-direction: column;
+}
+
+button#loading {
+  position: absolute;
+  z-index: 1;
+  margin-top: 30px;
+  background-color: black;
+  color: white;
+  border: none;
+  width: 120px;
+  height: 50px;
+  font-size: 30px;
+  display: none;
+}
 /* Add more styles as needed */
