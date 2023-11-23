@@ -16,13 +16,6 @@ let blocks = [];
 let createBlocks = () => {
   canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
   numBlocks = parseInt(document.getElementById("numOfBlocks").value);
-  if (numBlocks < 5) {
-    document.getElementById("numOfBlocks").value = 5;
-    numBlocks = 5;
-  } else if (numBlocks > 100) {
-    document.getElementById("numOfBlocks").value = 100;
-    numBlocks = 100;
-  }
   let blockOffset = 0;
   let blockWidth = canvasWidth / numBlocks - blockOffset;
   let blockUnitHeight = canvasHeight / numBlocks;
@@ -128,3 +121,5 @@ let sort = (event) => {
   // 120 for bubble
   // 200 for insertion
 };
+
+createBlocks();
