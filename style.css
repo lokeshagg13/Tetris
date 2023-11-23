@@ -1,0 +1,65 @@
+body {
+  margin: 0;
+  background-color: black;
+  font-family: "Arial", sans-serif;
+}
+
+canvas {
+  display: block;
+  margin: 20px 110px 20px 250px;
+  border: 2px solid white;
+}
+
+.controls-container {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  color: #fff; /* Change the color as needed */
+}
+
+form#main {
+  text-align: center;
+  margin-top: 20px;
+}
+
+div.input-num {
+  color: white;
+  margin-right: 10px;
+  margin-left: -225px;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  margin: 50px 20px;
+}
+
+.radio-btn {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+input[type="number"] {
+  padding: 5px;
+}
+
+input[type="radio"] {
+  transform: scale(1.5);
+  margin-right: 10px;
+}
+
+input[type="submit"] {
+  padding: 8px 16px;
+  background-color: #4caf50; /* Green */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 50px;
+}
+
+input[type="submit"]:hover {
+  background-color: #45a049; /* Darker green on hover */
+}
+
+/* Add more styles as needed */
