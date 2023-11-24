@@ -1,212 +1,127 @@
-const canvas = document.getElementById("canvas");
-const canvasContext = canvas.getContext("2d");
+let canvas = document.getElementById("canvas");
+let canvasContext = canvas.getContext("2d");
+canvas.width = 936;
+canvas.height = 600;
 
-const canvasWidth = canvas.width;
-const canvasHeight = canvas.height;
+canvasContext.scale(2, 2);
 
-let numBlocks = 0;
-let blocks = [];
-let sortInterval;
+// Game board geometry
+let gBPixelHeight = 229;
+let gBPixelWidth = 143;
+let blockSize = 11; // Square block with width = height = size
+let xOffset = 11;
+let yOffset = 9;
 
-let enableAnimationMode = () => {
-  let inputElements = [
-    ...document.querySelectorAll(
-      "input[type='radio'],input[type='submit'],select"
-    ),
-  ];
-  inputElements.map((elem) => (elem.disabled = true));
+// Game logic geometry
+let gBArrayHeight = 20;
+let gBArrayWidth = 12;
+
+let coordinateArray = [...Array(gBArrayHeight)].map((e) =>
+  Array(gBArrayWidth).fill(0)
+);
+
+let gameBoardArray = [...Array(gBArrayHeight)].map((e) =>
+  Array(gBArrayWidth).fill(0)
+);
+
+const DIRECTION = {
+  IDLE: 0,
+  DOWN: 1,
+  LEFT: 2,
+  RIGHT: 3,
 };
 
-let disableAnimationMode = () => {
-  let inputElements = [
-    ...document.querySelectorAll(
-      "input[type='radio'],input[type='submit'],select"
-    ),
-  ];
-  inputElements.map((elem) => (elem.disabled = false));
-};
+const CANVAS_COLOR = "white";
+const COLORS = ["purple", "cyan", "blue", "yellow", "orange", "green", "red"];
 
-let resetHandler = () => {
-  disableAnimationMode();
-  if (sortInterval) clearInterval(sortInterval);
-  createBlocks();
-};
+// Initial Start position of the tetromino
+let initialStartX = 4;
+let initialStartY = 0;
+let currentTetromino;
 
-let createBlocks = () => {
-  canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
-  numBlocks = parseInt(document.getElementById("numOfBlocks").value);
-  let blockOffset = 0;
-  let blockWidth = canvasWidth / numBlocks - blockOffset;
-  let blockUnitHeight = canvasHeight / numBlocks;
-  blocks = new BlockSet(
-    numBlocks,
-    [],
-    blockWidth,
-    blockUnitHeight,
-    blockOffset
-  );
-  blocks.createNewBlocks(canvasHeight, "white");
-  blocks.drawBlocks();
-};
-
-let createColorArray = (
-  numblocks,
-  markedIndexArray,
-  highlightPivot = false
-) => {
-  const colorArray = Array.from({ length: numblocks }, (_, index) => {
-    return markedIndexArray.includes(index) ? "#FFBF00" : "yellow";
-  });
-  if (highlightPivot) colorArray[markedIndexArray.slice(-1)[0]] = "blue";
-  return colorArray;
-};
-
-let getSelectedSortAlgorithm = () => {
-  let radioButtons =
-    document.getElementById("sortingForm").elements["sortingAlgorithm"];
-
-  // Iterate through radio buttons to find the checked one
-  let checkedRadioButton;
-  for (var i = 0; i < radioButtons.length; i++) {
-    if (radioButtons[i].checked) {
-      checkedRadioButton = radioButtons[i];
-      break;
+let createCoordinateArray = () => {
+  let i = 0;
+  let j = 0;
+  for (let y = yOffset; y < gBPixelHeight; y += blockSize) {
+    for (let x = xOffset; x < gBPixelWidth; x += blockSize) {
+      coordinateArray[i][j] = new Coordinate(x, y);
+      j += 1;
     }
+    i += 1;
+    j = 0;
   }
-
-  return checkedRadioButton.value;
 };
 
-let getMillisecondsTime = (numBlocks, speed, sortAlgorithm, seqL) => {
-  let mapping = {
-    bubble: {
-      s: [50000, 100000, 500000, 1000000, 5000000],
-      m: [10000, 50000, 100000, 500000, 1000000],
-      f: [5000, 10000, 1000, 1000, 1000],
-    },
-    selection: {
-      s: [50000, 100000, 500000, 1000000, 5000000],
-      m: [10000, 50000, 100000, 500000, 1000000],
-      f: [5000, 10000, 1000, 1000, 1000],
-    },
-    insertion: {
-      s: [50000, 100000, 500000, 1000000, 5000000],
-      m: [10000, 50000, 100000, 500000, 1000000],
-      f: [5000, 10000, 1000, 1000, 1000],
-    },
-    merge: {
-      s: [25000, 25000, 25000, 25000, 25000],
-      m: [10000, 10000, 10000, 10000, 10000],
-      f: [5000, 5000, 5000, 5000, 5000],
-    },
-    quick: {
-      s: [5000, 10000, 50000, 100000, 500000],
-      m: [1000, 5000, 10000, 50000, 100000],
-      f: [7500, 2500, 1000, 1000, 1000],
-    },
-    heap: {
-      s: [50000, 100000, 500000, 1000000, 5000000],
-      m: [10000, 50000, 100000, 500000, 1000000],
-      f: [5000, 10000, 1000, 1000, 1000],
-    },
-    shell: {
-      s: [50000, 100000, 500000, 1000000, 5000000],
-      m: [10000, 50000, 100000, 500000, 1000000],
-      f: [5000, 10000, 1000, 1000, 1000],
-    },
-  };
-  let numBlocksIndex = [25, 50, 75, 100, 200].indexOf(numBlocks);
-  let millisecondsTime = mapping[sortAlgorithm][speed][numBlocksIndex] / seqL;
-  console.log(millisecondsTime);
-  return millisecondsTime;
-};
+let setupCanvas = () => {
+  canvasContext.fillStyle = CANVAS_COLOR;
+  canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
-let toggleLoading = async (show = true) => {
-  return new Promise((resolve) => {
-    if (show) {
-      document.getElementById("loading").style.display = "block";
-    } else {
-      document.getElementById("loading").style.display = "none";
-    }
-    // Assuming some delay for the loading state (adjust as needed)
-    setTimeout(() => {
-      resolve();
-    }, 100);
-  });
-};
-
-let sort = async (event) => {
-  event.preventDefault();
-  enableAnimationMode();
-
-  let highlightPivot = false; // for quick sort, the last element of each
-  // compare sequence would be a pivot index (marked blue)
-
-  let sortAlgorithm = getSelectedSortAlgorithm();
-  if (["quick", "heap"].includes(sortAlgorithm)) highlightPivot = true;
-
-  let speed = document.getElementById("speed").value;
-
-  await toggleLoading(true);
-
-  let sortResult;
-
-  switch (sortAlgorithm) {
-    case "bubble":
-      sortResult = await bubbleSort(blocks);
-      break;
-    case "selection":
-      sortResult = selectionSort(blocks);
-      break;
-    case "insertion":
-      sortResult = insertionSort(blocks);
-      break;
-    case "merge":
-      sortResult = mergeSort(blocks);
-      break;
-    case "quick":
-      sortResult = quickSort(blocks);
-      break;
-    case "heap":
-      sortResult = heapSort(blocks);
-      break;
-    case "shell":
-      sortResult = shellSort(blocks);
-      break;
-    default:
-      sortResult = bubbleSort(blocks);
-  }
-
-  let { sortSequences, compareSequences } = sortResult;
-
-  await toggleLoading(false);
-
-  let millisecondsTime = getMillisecondsTime(
-    numBlocks,
-    speed,
-    sortAlgorithm,
-    sortSequences.length
+  canvasContext.strokeStyle = "black";
+  canvasContext.strokeRect(
+    xOffset - 1,
+    yOffset - 3,
+    gBPixelWidth - blockSize,
+    gBPixelHeight - blockSize + 5
   );
-  sortInterval = setInterval(() => {
-    if (sortSequences.length > 0) {
-      let nextBlockSet = sortSequences.shift();
-      let nextCompareSet = compareSequences.shift();
-      let colorArray = createColorArray(
-        numBlocks,
-        nextCompareSet,
-        highlightPivot
-      );
-      // nextBlockSet.printBlocks();
-      canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
-      nextBlockSet.drawBlocks(colorArray);
-    } else {
-      clearInterval(sortInterval);
-      // disableAnimationMode();
-    }
-  }, millisecondsTime);
+  createCoordinateArray();
 
-  // 120 for bubble
-  // 200 for insertion
+  document.addEventListener("keydown", handleKeyPress);
+  createTetromino();
+  drawTetromino();
 };
 
-createBlocks();
+let handleKeyPress = (key) => {
+  if (key.keyCode === 65 || key.keyCode === 37) {
+    deleteTetromino();
+    currentTetromino.moveTetromino(DIRECTION.LEFT);
+    drawTetromino();
+  } else if (key.keyCode === 68 || key.keyCode === 39) {
+    deleteTetromino();
+    currentTetromino.moveTetromino(DIRECTION.RIGHT);
+    drawTetromino();
+  } else if (key.keyCode === 83 || key.keyCode === 40) {
+    deleteTetromino();
+    currentTetromino.moveTetromino(DIRECTION.DOWN);
+    drawTetromino();
+  }
+};
+
+let drawTetromino = () => {
+  for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
+    let x = currentTetromino.blockPositions[i][0] + currentTetromino.startX;
+    let y = currentTetromino.blockPositions[i][1] + currentTetromino.startY;
+    gameBoardArray[x][y] = 1;
+    let coordX = coordinateArray[y][x].x;
+    let coordY = coordinateArray[y][x].y;
+    console.log(coordX, coordY);
+    canvasContext.fillStyle = currentTetromino.color;
+    canvasContext.fillRect(coordX, coordY, blockSize - 2, blockSize - 2);
+  }
+};
+
+let deleteTetromino = () => {
+  for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
+    let x = currentTetromino.blockPositions[i][0] + currentTetromino.startX;
+    let y = currentTetromino.blockPositions[i][1] + currentTetromino.startY;
+    gameBoardArray[x][y] = 0;
+    let coordX = coordinateArray[y][x].x;
+    let coordY = coordinateArray[y][x].y;
+    console.log(coordX, coordY);
+    canvasContext.fillStyle = CANVAS_COLOR;
+    canvasContext.fillRect(coordX, coordY, blockSize - 2, blockSize - 2);
+  }
+};
+
+let createTetromino = () => {
+  let randomTetromino = Math.floor(Math.random() * tetrominos.length);
+  let randomColor = Math.floor(Math.random() * COLORS.length);
+  currentTetromino = new Tetromino(
+    initialStartX,
+    initialStartY,
+    tetrominos[randomTetromino],
+    COLORS[randomColor],
+    DIRECTION.DOWN
+  );
+};
+
+document.addEventListener("DOMContentLoaded", setupCanvas);

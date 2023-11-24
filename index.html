@@ -1,112 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Sort Viz</title>
+    <title>Tetris</title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script
-      src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"
-      integrity="sha512-WFN04846sdKMIP5LKNphMaWzU7YpMyCU245etK3g/2ARYbPK9Ub18eG+ljU96qKRCWh+quCY7yefSmlkQw1ANQ=="
-      crossorigin="anonymous"
-      referrerpolicy="no-referrer"
-    ></script>
     <link rel="stylesheet" href="style.css" />
-    <script
-      src="https://kit.fontawesome.com/ee7c4af1cd.js"
-      crossorigin="anonymous"
-    ></script>
   </head>
-  <body style="margin: 0px; background-color: black">
-    <div style="display: flex">
-      <div>
-        <canvas id="canvas" width="500" height="500"></canvas>
-        <form id="main">
-          <div class="controls">
-            <div class="input-num">
-              <label for="numOfBlocks">Number of Blocks:</label>
-              <select
-                id="numOfBlocks"
-                name="numOfBlocks"
-                onchange="createBlocks()"
-                required
-              >
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="75">75</option>
-                <option value="100" selected>100</option>
-                <option value="200">200</option>
-              </select>
-            </div>
-            <div class="input-speed">
-              <label for="speed">Speed:</label>
-              <select id="speed" name="speed" required>
-                <option value="s">Slow</option>
-                <option value="m">Medium</option>
-                <option value="f" selected>Fast</option>
-              </select>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="controls-container">
-        <div class="radio-group">
-          <form id="sortingForm" onsubmit="sort(event)">
-            <div class="radio-btn">
-              <input
-                type="radio"
-                name="sortingAlgorithm"
-                value="bubble"
-                checked
-              />
-              Bubble Sort
-            </div>
-            <div class="radio-btn">
-              <input type="radio" name="sortingAlgorithm" value="insertion" />
-              Insertion Sort
-            </div>
-            <div class="radio-btn">
-              <input type="radio" name="sortingAlgorithm" value="selection" />
-              Selection Sort
-            </div>
-            <div class="radio-btn">
-              <input type="radio" name="sortingAlgorithm" value="merge" />
-              Merge Sort
-            </div>
-            <div class="radio-btn">
-              <input type="radio" name="sortingAlgorithm" value="quick" />
-              Quick Sort
-            </div>
-            <div class="radio-btn">
-              <input type="radio" name="sortingAlgorithm" value="heap" />
-              Heap Sort
-            </div>
-            <div class="radio-btn">
-              <input type="radio" name="sortingAlgorithm" value="shell" />
-              Shell Sort
-            </div>
-
-            <div class="actions">
-              <input id="start" type="submit" value="Start" />
-              <button id="loading" value="Loading" disabled="disabled">
-                <i class="fas fa-spinner fa-spin"></i>
-              </button>
-              <input
-                id="reset"
-                type="button"
-                value="Reset"
-                onclick="resetHandler()"
-              />
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <script src="block.js"></script>
-    <script src="blockset.js"></script>
+  <body>
+    <canvas id="canvas"></canvas>
+    <script src="coordinate.js"></script>
+    <script src="tetrominoShapes.js"></script>
+    <script src="tetromino.js"></script>
     <script src="game.js"></script>
-    <script src="sort.js"></script>
   </body>
 </html>
