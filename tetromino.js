@@ -7,13 +7,16 @@ class Tetromino {
     this.direction = direction;
   }
 
-  moveTetromino(direction) {
+  changeDirection(direction) {
     this.direction = direction;
-    if (direction === DIRECTION.LEFT) {
+  }
+
+  moveTetromino() {
+    if (this.direction === DIRECTION.LEFT) {
       this.startX -= 1;
-    } else if (direction === DIRECTION.RIGHT) {
+    } else if (this.direction === DIRECTION.RIGHT) {
       this.startX += 1;
-    } else if (direction === DIRECTION.DOWN) {
+    } else if (this.direction === DIRECTION.DOWN) {
       this.startY += 1;
     }
   }
