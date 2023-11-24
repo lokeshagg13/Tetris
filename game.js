@@ -52,16 +52,16 @@ let controlsTextPosition = [
   [240, 245],
 ];
 
-let coordinateArray = [...Array(gBArrayHeight)].map((e) =>
-  Array(gBArrayWidth).fill(0)
+let coordinateArray = [...Array(gBArrayWidth)].map((e) =>
+  Array(gBArrayHeight).fill(0)
 );
 
-let gameBoardArray = [...Array(gBArrayHeight)].map((e) =>
-  Array(gBArrayWidth).fill(0)
+let gameBoardArray = [...Array(gBArrayWidth)].map((e) =>
+  Array(gBArrayHeight).fill(0)
 );
 
-let stoppedShapeArray = [...Array(gBArrayHeight)].map((e) =>
-  Array(gBArrayWidth).fill(0)
+let stoppedShapeArray = [...Array(gBArrayWidth)].map((e) =>
+  Array(gBArrayHeight).fill(0)
 );
 
 const DIRECTION = {
@@ -99,10 +99,10 @@ let createCoordinateArray = () => {
       x += blockSize
     ) {
       coordinateArray[i][j] = new Coordinate(x, y);
-      j += 1;
+      i += 1;
     }
-    i += 1;
-    j = 0;
+    j += 1;
+    i = 0;
   }
 };
 
@@ -213,6 +213,8 @@ let handleKeyPress = (key) => {
       }
     } else if (key.keyCode === 83 || key.keyCode === 40) {
       moveTetrominoDown();
+    } else if (key.keyCode === 69) {
+      rotateTetromino();
     }
   }
 };
@@ -225,6 +227,12 @@ let moveTetrominoDown = () => {
     drawTetromino();
   }
 };
+
+// window.setInterval(() => {
+//   if (winOrLose !== "Game Over") {
+//     moveTetrominoDown();
+//   }
+// }, 1000);
 
 let hittingTheWalls = () => {
   for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
@@ -242,7 +250,7 @@ let hittingTheWalls = () => {
 };
 
 let checkForVerticalCollision = () => {
-  let tetrominoCopy = _.cloneDeep(currentTetromino);
+  let tetrominoCopy = currentTetromino;
   let collision = false;
   for (let i = 0; i < tetrominoCopy.blockPositions.length; i += 1) {
     let square = tetrominoCopy.blockPositions[i];
@@ -259,33 +267,34 @@ let checkForVerticalCollision = () => {
         collision = true;
         break;
       }
-      if (y >= 20) {
-        collision = true;
-        break;
-      }
     }
+    if (y >= 20) {
+      collision = true;
+      break;
+    }
+  }
 
-    if (collision) {
-      if (currentTetromino.startY <= 2) {
-        winOrLose = "Game Over";
-        // Game over logic
-      } else {
-        for (let i = 0; i < tetrominoCopy.blockPositions.length; i += 1) {
-          let square = tetrominoCopy.blockPositions[i];
-          let x = square[0] + tetrominoCopy.startX;
-          let y = square[1] + tetrominoCopy.startY;
-          stoppedShapeArray[x][y] = currentTetromino.color;
-        }
-        checkForCompletedRows();
-        createTetromino();
+  if (collision) {
+    if (currentTetromino.startY <= 2) {
+      winOrLose = "Game Over";
+      // Game over logic
+    } else {
+      for (let i = 0; i < tetrominoCopy.blockPositions.length; i += 1) {
+        let square = tetrominoCopy.blockPositions[i];
+        let x = square[0] + tetrominoCopy.startX;
+        let y = square[1] + tetrominoCopy.startY;
+        stoppedShapeArray[x][y] = tetrominoCopy.color;
       }
+      checkForCompletedRows();
+      createTetromino();
+      drawTetromino();
     }
   }
   return collision;
 };
 
 let checkForHorizontalCollision = () => {
-  let tetrominoCopy = _.cloneDeep(currentTetromino);
+  let tetrominoCopy = currentTetromino;
   let collision = false;
   for (let i = 0; i < tetrominoCopy.blockPositions.length; i += 1) {
     let square = tetrominoCopy.blockPositions[i];
@@ -308,15 +317,71 @@ let checkForHorizontalCollision = () => {
 
 let checkForCompletedRows = () => {
   let rowsToDelete = 0;
-  // continue
-} 
+  let startOfDeletion = 0;
+  for (let y = 0; y < gBArrayHeight; y++) {
+    let completed = true;
+    for (let x = 0; x < gBArrayWidth; x++) {
+      let square = stoppedShapeArray[x][y];
+      if (square == 0 || typeof square === "undefined") {
+        completed = false;
+        break;
+      }
+    }
+    if (completed) {
+      if (startOfDeletion === 0) startOfDeletion = y;
+      rowsToDelete++;
+      for (let i = 0; i < gBArrayWidth; i++) {
+        stoppedShapeArray[i][y] = 0;
+        gameBoardArray[i][y] = 0;
+        let coordX = coordinateArray[i][y].x;
+        let coordY = coordinateArray[i][y].y;
+        canvasContext.fillStyle = "white";
+        canvasContext.fillRect(coordX, coordY, blockSize - 2, blockSize - 2);
+      }
+    }
+  }
+
+  if (rowsToDelete > 0) {
+    score += 10;
+    showScore();
+    moveAllRowsDown(rowsToDelete, startOfDeletion);
+  }
+};
+
+let moveAllRowsDown = (rowsToDelete, startOfDeletion) => {
+  for (let i = startOfDeletion - 1; i >= 0; i--) {
+    for (let x = 0; x < gBArrayWidth; x++) {
+      let y2 = i + rowsToDelete;
+      let square = stoppedShapeArray[x][i];
+      let nextSquare = stoppedShapeArray[x][y2];
+      if (typeof square === "string") {
+        nextSquare = square;
+        gameBoardArray[x][y2] = 1;
+        stoppedShapeArray[x][y2] = square;
+        let coordX = coordinateArray[x][y2].x;
+        let coordY = coordinateArray[x][y2].y;
+        canvasContext.fillStyle = nextSquare;
+        canvasContext.fillRect(coordX, coordY, blockSize - 2, blockSize - 2);
+
+        square = 0;
+        gameBoardArray[x][i] = 0;
+        stoppedShapeArray[x][i] = 0;
+        coordX = coordinateArray[x][i].x;
+        coordY = coordinateArray[x][i].y;
+        canvasContext.fillStyle = "white";
+        canvasContext.fillRect(coordX, coordY, blockSize - 2, blockSize - 2);
+      }
+    }
+  }
+};
+
 let drawTetromino = () => {
   for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
     let x = currentTetromino.blockPositions[i][0] + currentTetromino.startX;
     let y = currentTetromino.blockPositions[i][1] + currentTetromino.startY;
     gameBoardArray[x][y] = 1;
-    let coordX = coordinateArray[y][x].x;
-    let coordY = coordinateArray[y][x].y;
+    let coordX = coordinateArray[x][y].x;
+    let coordY = coordinateArray[x][y].y;
     canvasContext.fillStyle = currentTetromino.color;
     canvasContext.fillRect(coordX, coordY, blockSize - 2, blockSize - 2);
   }
@@ -327,8 +392,8 @@ let deleteTetromino = () => {
     let x = currentTetromino.blockPositions[i][0] + currentTetromino.startX;
     let y = currentTetromino.blockPositions[i][1] + currentTetromino.startY;
     gameBoardArray[x][y] = 0;
-    let coordX = coordinateArray[y][x].x;
-    let coordY = coordinateArray[y][x].y;
+    let coordX = coordinateArray[x][y].x;
+    let coordY = coordinateArray[x][y].y;
     canvasContext.fillStyle = CANVAS_COLOR;
     canvasContext.fillRect(coordX, coordY, blockSize - 2, blockSize - 2);
   }
@@ -346,7 +411,50 @@ let createTetromino = () => {
   );
 };
 
+let rotateTetromino = () => {
+  let getLastSquareX = () => {
+    let lastX = 0;
+    for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
+      let square = currentTetromino.blockPositions[i];
+      if (square[0] > lastX) lastX = square[0];
+    }
+    return lastX;
+  };
+  let newRotation = new Array();
+  let tetrominoCopy = _.cloneDeep(currentTetromino);
+  let currentTetrominoBU;
+  for (let i = 0; i < tetrominoCopy.blockPositions.length; i++) {
+    currentTetrominoBU = _.cloneDeep(currentTetromino);
+    let x = tetrominoCopy.blockPositions[i][0];
+    let y = tetrominoCopy.blockPositions[i][1];
+    let newX = getLastSquareX() - y;
+    let newY = x;
+    newRotation.push([newX, newY]);
+  }
+
+  deleteTetromino();
+  try {
+    currentTetromino = newRotation;
+    drawTetromino();
+  } catch (e) {
+    if (e instanceof TypeError) {
+      // Draw outside of gameboard
+      currentTetromino = currentTetrominoBU;
+      deleteTetromino();
+      drawTetromino();
+    }
+  }
+};
+
 let showScore = () => {
+  canvasContext.fillStyle = "white";
+  canvasContext.fillRect(
+    scoreRectPosition[0],
+    scoreRectPosition[1],
+    scoreRectSize[0],
+    scoreRectSize[1]
+  );
+  canvasContext.fillStyle = "black";
   canvasContext.fillText(
     score.toString(),
     scoreTextPosition[0],
@@ -355,6 +463,14 @@ let showScore = () => {
 };
 
 let showLevel = () => {
+  canvasContext.fillStyle = "white";
+  canvasContext.fillRect(
+    levelRectPosition[0],
+    levelRectPosition[1],
+    levelRectSize[0],
+    levelRectSize[1]
+  );
+  canvasContext.fillStyle = "black";
   canvasContext.fillText(
     level.toString(),
     levelTextPosition[0],
