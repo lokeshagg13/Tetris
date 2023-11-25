@@ -12,10 +12,20 @@
       crossorigin="anonymous"
       referrerpolicy="no-referrer"
     ></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-confetti@latest/dist/js-confetti.browser.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
-    <canvas id="canvas"></canvas>
+    <div id="main">
+      <canvas id="canvas"></canvas>
+      <canvas id="confetti"></canvas>
+    </div>
+    <div id="controls">
+      <button id="restart-btn" onclick="restartGame()">Restart Game</button>
+      <button id="pause-btn" onclick="pauseGame()">
+        Pause
+      </button>
+    </div>
     <script src="coordinate.js"></script>
     <script src="tetrominoShapes.js"></script>
     <script src="tetromino.js"></script>

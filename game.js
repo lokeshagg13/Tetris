@@ -1,7 +1,9 @@
 let canvas = document.getElementById("canvas");
 let canvasContext = canvas.getContext("2d");
-canvas.width = 936;
-canvas.height = 600;
+let confettiCanvas = document.getElementById("confettiCanvas");
+
+canvas.width = 756;
+canvas.height = 524;
 
 canvasContext.scale(2, 2);
 
@@ -35,11 +37,6 @@ let levelRectPosition = [235, 151];
 let levelRectSize = [100, 15];
 let levelTextPosition = [240, 163];
 
-// let winOrLoseLabelPosition = [300, 221];
-// let winOrLoseRectPosition = [300, 232];
-// let winOrLoseRectSize = [161, 95];
-// let winOrLoseTextPosition = [310, 261];
-
 let controlsLabelPosition = [235, 185];
 let controlsRectPosition = [235, 196];
 let controlsRectSize = [100, 53];
@@ -52,18 +49,10 @@ let controlsTextPosition = [
   [240, 245],
 ];
 
-let coordinateArray = [...Array(gBArrayWidth)].map((e) =>
-  Array(gBArrayHeight).fill(0)
-);
+let gameOverTextPosition = [120, 110];
+let pauseTextPosition = [130, 110];
 
-let gameBoardArray = [...Array(gBArrayWidth)].map((e) =>
-  Array(gBArrayHeight).fill(0)
-);
-
-let stoppedShapeArray = [...Array(gBArrayWidth)].map((e) =>
-  Array(gBArrayHeight).fill(0)
-);
-
+// Game Constants
 const DIRECTION = {
   IDLE: 0,
   DOWN: 1,
@@ -78,10 +67,27 @@ const COLORS = ["purple", "cyan", "blue", "yellow", "orange", "green", "red"];
 let initialStartX = 4;
 let initialStartY = 0;
 
+// Important Arrays
+let coordinateArray = [...Array(gBArrayWidth)].map((e) =>
+  Array(gBArrayHeight).fill(0)
+);
+
+let gameBoardArray = [...Array(gBArrayWidth)].map((e) =>
+  Array(gBArrayHeight).fill(0)
+);
+
+let stoppedShapeArray = [...Array(gBArrayWidth)].map((e) =>
+  Array(gBArrayHeight).fill(0)
+);
+
 // Game Rewards and Difficulty Levels
-let score = 0;
+let levelSpeed = (level) => (level - 1) * 0.5 + 1;
+let levelScore = (level) => (level - 1) * 20 + 50;
 let level = 1;
-let winOrLose = "Playing";
+let speed = levelSpeed(level);
+let maxScore = levelScore(level);
+let currentScore = 0;
+let gameState = "Playing"; // "Playing" / "Game Over" / "Paused"
 
 let currentTetromino;
 
@@ -191,30 +197,32 @@ let setupCanvas = () => {
   createCoordinateArray();
 
   document.addEventListener("keydown", handleKeyPress);
-  createTetromino();
+  createNewTetromino();
   drawTetromino();
 };
 
 let handleKeyPress = (key) => {
-  if (winOrLose != "Game Over") {
+  if (gameState != "Game Over") {
     if (key.keyCode === 65 || key.keyCode === 37) {
       currentTetromino.changeDirection(DIRECTION.LEFT);
       if (!hittingTheWalls() && !checkForHorizontalCollision()) {
-        deleteTetromino();
+        eraseTetromino();
         currentTetromino.moveTetromino();
         drawTetromino();
       }
     } else if (key.keyCode === 68 || key.keyCode === 39) {
       currentTetromino.changeDirection(DIRECTION.RIGHT);
       if (!hittingTheWalls() && !checkForHorizontalCollision()) {
-        deleteTetromino();
+        eraseTetromino();
         currentTetromino.moveTetromino();
         drawTetromino();
       }
     } else if (key.keyCode === 83 || key.keyCode === 40) {
       moveTetrominoDown();
-    } else if (key.keyCode === 69) {
-      rotateTetromino();
+    } else if (key.keyCode === 69 || key.keyCode === 32) {
+      rotateAndDrawTetromino(true);
+    } else if (key.keyCode === 81 || key.keyCode === 16) {
+      rotateAndDrawTetromino(false);
     }
   }
 };
@@ -222,17 +230,17 @@ let handleKeyPress = (key) => {
 let moveTetrominoDown = () => {
   currentTetromino.changeDirection(DIRECTION.DOWN);
   if (!checkForVerticalCollision()) {
-    deleteTetromino();
+    eraseTetromino();
     currentTetromino.moveTetromino();
     drawTetromino();
   }
 };
 
-// window.setInterval(() => {
-//   if (winOrLose !== "Game Over") {
-//     moveTetrominoDown();
-//   }
-// }, 1000);
+window.setInterval(() => {
+  if (gameState !== "Game Over" && gameState !== "Paused") {
+    moveTetrominoDown();
+  }
+}, 1000 / speed);
 
 let hittingTheWalls = () => {
   for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
@@ -261,7 +269,7 @@ let checkForVerticalCollision = () => {
     }
     if (gameBoardArray[x][y + 1] === 1) {
       if (typeof stoppedShapeArray[x][y + 1] === "string") {
-        deleteTetromino();
+        eraseTetromino();
         currentTetromino.moveTetromino(DIRECTION.DOWN);
         drawTetromino();
         collision = true;
@@ -276,8 +284,9 @@ let checkForVerticalCollision = () => {
 
   if (collision) {
     if (currentTetromino.startY <= 2) {
-      winOrLose = "Game Over";
-      // Game over logic
+      gameState = "Game Over";
+      document.getElementById("pause-btn").disabled = true;
+      gameOverScreen();
     } else {
       for (let i = 0; i < tetrominoCopy.blockPositions.length; i += 1) {
         let square = tetrominoCopy.blockPositions[i];
@@ -286,7 +295,7 @@ let checkForVerticalCollision = () => {
         stoppedShapeArray[x][y] = tetrominoCopy.color;
       }
       checkForCompletedRows();
-      createTetromino();
+      createNewTetromino();
       drawTetromino();
     }
   }
@@ -342,8 +351,18 @@ let checkForCompletedRows = () => {
   }
 
   if (rowsToDelete > 0) {
-    score += 10;
+    currentScore += 10 * rowsToDelete;
     showScore();
+    if (currentScore >= maxScore) {
+      let carryScore = maxScore - currentScore;
+      createConfetti();
+      level += 1;
+      showLevel();
+      speed = levelSpeed(level);
+      maxScore = levelScore(level);
+      currentScore = carryScore;
+      showScore();
+    }
     moveAllRowsDown(rowsToDelete, startOfDeletion);
   }
 };
@@ -387,7 +406,7 @@ let drawTetromino = () => {
   }
 };
 
-let deleteTetromino = () => {
+let eraseTetromino = () => {
   for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
     let x = currentTetromino.blockPositions[i][0] + currentTetromino.startX;
     let y = currentTetromino.blockPositions[i][1] + currentTetromino.startY;
@@ -399,48 +418,39 @@ let deleteTetromino = () => {
   }
 };
 
-let createTetromino = () => {
+let createNewTetromino = () => {
   let randomTetromino = Math.floor(Math.random() * tetrominos.length);
   let randomColor = Math.floor(Math.random() * COLORS.length);
   currentTetromino = new Tetromino(
+    tetrominos[randomTetromino],
     initialStartX,
     initialStartY,
-    tetrominos[randomTetromino],
     COLORS[randomColor],
     DIRECTION.DOWN
   );
 };
 
-let rotateTetromino = () => {
-  let getLastSquareX = () => {
-    let lastX = 0;
-    for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
-      let square = currentTetromino.blockPositions[i];
-      if (square[0] > lastX) lastX = square[0];
-    }
-    return lastX;
-  };
-  let newRotation = new Array();
-  let tetrominoCopy = _.cloneDeep(currentTetromino);
-  let currentTetrominoBU;
-  for (let i = 0; i < tetrominoCopy.blockPositions.length; i++) {
-    currentTetrominoBU = _.cloneDeep(currentTetromino);
-    let x = tetrominoCopy.blockPositions[i][0];
-    let y = tetrominoCopy.blockPositions[i][1];
-    let newX = getLastSquareX() - y;
-    let newY = x;
-    newRotation.push([newX, newY]);
+let checkForOverdrawnBlocks = () => {
+  for (let i = 0; i < currentTetromino.blockPositions.length; i++) {
+    let x = currentTetromino.blockPositions[i][0] + currentTetromino.startX;
+    let y = currentTetromino.blockPositions[i][1] + currentTetromino.startY;
+    if (typeof stoppedShapeArray[x][y] === "string") return true;
   }
+  return false;
+};
 
-  deleteTetromino();
+let rotateAndDrawTetromino = (clockwise = true) => {
+  let currentTetrominoBU = _.cloneDeep(currentTetromino);
+  eraseTetromino();
+  currentTetromino.rotateTetromino(clockwise);
   try {
-    currentTetromino = newRotation;
+    if (checkForOverdrawnBlocks()) throw new Error("OVERDRAWING");
     drawTetromino();
   } catch (e) {
-    if (e instanceof TypeError) {
-      // Draw outside of gameboard
+    if (e instanceof TypeError || e.message === "OVERDRAWING") {
+      // Draw outside of gameboard or on the current blocks
       currentTetromino = currentTetrominoBU;
-      deleteTetromino();
+      eraseTetromino();
       drawTetromino();
     }
   }
@@ -456,7 +466,7 @@ let showScore = () => {
   );
   canvasContext.fillStyle = "black";
   canvasContext.fillText(
-    score.toString(),
+    currentScore.toString() + " / " + maxScore.toString(),
     scoreTextPosition[0],
     scoreTextPosition[1]
   );
@@ -486,6 +496,55 @@ let drawTetrisLogo = () => {
     tetrisLogoSize[0],
     tetrisLogoSize[1]
   );
+};
+
+let gameOverScreen = () => {
+  canvasContext.fillStyle = "rgba(220,220,220,0.9)";
+  canvasContext.fillRect(
+    gameBoardPositionTopLeft[0],
+    gameBoardPositionTopLeft[1] - 2,
+    gameBoardSize[0] - 2,
+    gameBoardSize[1] - 2
+  );
+  canvasContext.fillStyle = "black";
+  canvasContext.fillText(
+    "GAME OVER",
+    gameOverTextPosition[0],
+    gameOverTextPosition[1]
+  );
+};
+
+let createConfetti = () => {
+  const jsConfetti = new JSConfetti({ confettiCanvas });
+  jsConfetti.addConfetti();
+};
+
+let pauseGame = () => {
+  if (gameState === "Playing") {
+    document.getElementById("pause-btn").innerText = "Resume";
+    gameState = "Paused";
+  } else if (gameState === "Paused") {
+    document.getElementById("pause-btn").innerText = "Pause";
+    gameState = "Playing";
+  }
+};
+
+let restartGame = () => {
+  document.getElementById("pause-btn").disabled = false;
+  gameBoardArray = [...Array(gBArrayWidth)].map((e) =>
+    Array(gBArrayHeight).fill(0)
+  );
+
+  stoppedShapeArray = [...Array(gBArrayWidth)].map((e) =>
+    Array(gBArrayHeight).fill(0)
+  );
+
+  level = 1;
+  speed = levelSpeed(level);
+  maxScore = levelScore(level);
+  currentScore = 0;
+  gameState = "Playing";
+  setupCanvas();
 };
 
 document.addEventListener("DOMContentLoaded", setupCanvas);
